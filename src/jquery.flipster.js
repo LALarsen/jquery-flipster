@@ -288,7 +288,7 @@
             }
 
             function updateNav() {
-                if ( settings.nav ) {
+                if ( settings.nav && _items.length > 1 ) {
 
                     var category = _currentItem.data('flip-category');
 
