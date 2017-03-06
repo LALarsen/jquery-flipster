@@ -465,8 +465,7 @@
 
             function show() {
                 resize(true);
-                self.hide()
-                    .css('visibility', '')
+                self.css('visibility', '')
                     .addClass(classes.active)
                     .fadeIn(settings.fadeIn);
             }
