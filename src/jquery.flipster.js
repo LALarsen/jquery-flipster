@@ -74,8 +74,9 @@
             // Speed of the fade in animation after items have been setup
 
             loop: false,
-            // [true|false]
+            // [true|false|number]
             // Loop around when the start or end is reached
+            // If number, this is the number of items that will be shown when the beginning or end is reached
 
             autoplay: false,
             // [false|milliseconds]
@@ -368,7 +369,8 @@
 
             function center() {
                 var total = _items.length,
-                    item, newClass, zIndex;
+                    loopCount = ( settings.loop !== true && settings.loop > 0 ? settings.loop : false ),
+                    item, newClass, zIndex, past, offset;
 
                 _items.each(function(i){
                     item = $(this);
@@ -393,13 +395,14 @@
                         });
                 });
 
+
                 if ( _currentIndex >= 0 ) {
                     if ( !_containerWidth || _itemOffsets[_currentIndex] === undefined ) { resize(true); }
 
                     if ( transformSupport ) {
                         _container.css('transform', 'translateX(' + _itemOffsets[_currentIndex] + 'px)');
                     } else {
-                        _container.css({ 'left': _itemOffsets[_currentIndex] + 'px' });
+                        _container.css('left', _itemOffsets[_currentIndex] + 'px' );
                     }
                 }
 
