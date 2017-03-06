@@ -152,7 +152,8 @@ myFlipster.flipster('jump', 0); // Jump to a specific index
 myFlipster.flipster('jump', $('.my-item')); // Jump to a specific item
 myFlipster.flipster('play'); // Resume autoplay
 myFlipster.flipster('play', 5000); // Set autoplay duration
-myFlipster.flipster('pause'); // Pause the autoplay
+myFlipster.flipster('pause'); // Pause the autoplay until next jump
+myFlipster.flipster('stop'); // Stop the autoplay entirely
 myFlipster.flipster('index'); // If items are added or removed, you can tell Flipster to reindex 
 ```
 
@@ -200,6 +201,17 @@ See room for improvement? Don't be shy! Fork this repo and I'll be happy to merg
 
 Version History
 ---------------
+
+
+- 1.1.2 - Mar 3 2016
+    - Bower & package.json fixes
+    
+- 1.1.1 - Mar 3 2016
+    - Fix for maximum callstack errors when not visible. #74 #79
+
+- 1.1.0 - Mar 3 2016
+    - `stop` method added for issues like #75 
+
 - 1.0.1 - Nov 1 2015
     - Fixed issue #63 where the active nav class was added to all nav items.
     

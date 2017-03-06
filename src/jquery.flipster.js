@@ -186,6 +186,7 @@
 
                 _container,
                 _containerWidth,
+                _resizeInterval,
 
                 _items,
                 _itemOffsets = [],
@@ -241,7 +242,7 @@
                         category = item.data('flip-category'),
                         itemTitle = item.data('flip-title') || item.attr('title') || i,
                         navLink = $('<a href="#" class="' + classes.navLink + '">' + itemTitle + '</a>')
-                        .data('index', i);
+                            .data('index', i);
 
                     _navLinks = _navLinks.add(navLink);
 
@@ -251,8 +252,8 @@
 
                             var categoryItem = $('<li class="' + classes.navItem + ' ' + classes.navCategory + '">');
                             var categoryLink = $('<a href="#" class="' + classes.navLink + ' ' + classes.navCategoryLink + '" data-flip-category="' + category + '">' + category + '</a>')
-                                    .data('category', category)
-                                    .data('index', i);
+                                .data('category', category)
+                                .data('index', i);
 
                             navCategories[category] = $('<ul class="' + classes.navChild + '" />');
 
@@ -332,6 +333,15 @@
                 _containerWidth = _container.width();
                 _container.height(calculateBiggestItemHeight());
 
+                // Prevent maximum callstack error. #79 #74
+                if ( !_containerWidth ) {
+                    _resizeInterval = _resizeInterval || setInterval(function(){ resize(skipTransition); },500);
+                    return;
+                } else if ( _resizeInterval ) {
+                    clearInterval(_resizeInterval);
+                    _resizeInterval = false;
+                }
+
                 _items.each(function(i) {
                     var item = $(this),
                         width,
@@ -343,7 +353,7 @@
 
                     width = item.outerWidth();
 
-                    if ( settings.spacing !== 0 ) {
+                    if ( settings.spacing !== 0 && _items.length > 1 ) {
                         item.css('margin-right', ( width * settings.spacing ) + 'px');
                     }
 
@@ -362,44 +372,31 @@
                     loopCount = ( settings.loop !== true && settings.loop > 0 ? settings.loop : false ),
                     item, newClass, zIndex, past, offset;
 
+                _items.each(function(i){
+                    item = $(this);
+                    newClass = ' ';
+
+                    if ( i === _currentIndex ) {
+                        newClass += classes.itemCurrent;
+                        zIndex = (total + 1);
+                    } else if ( i < _currentIndex ) {
+                        newClass += classes.itemPast + ' ' +
+                            classes.itemPast + '-' + (_currentIndex - i);
+                        zIndex = i;
+                    } else {
+                        newClass += classes.itemFuture + ' ' +
+                            classes.itemFuture + '-' + ( i - _currentIndex );
+                        zIndex = (total - i);
+                    }
+
+                    item.css('z-index', zIndex )
+                        .attr('class',function(i, c){
+                            return c && c.replace(classRemover, '').replace(whiteSpaceRemover,' ') + newClass;
+                        });
+                });
+
+
                 if ( _currentIndex >= 0 ) {
-
-                    _items.each(function(i) {
-                        item = $(this);
-                        newClass = ' ';
-
-                        if ( i === _currentIndex ) {
-                            newClass += classes.itemCurrent;
-                            zIndex = (total + 2);
-                        } else {
-                            past = ( i < _currentIndex ? true : false );
-                            offset = ( past ? _currentIndex - i : i - _currentIndex );
-
-                            if ( loopCount ) {
-                                if ( _currentIndex <= loopCount && i > _currentIndex + loopCount ) {
-                                    past = true;
-                                    offset = (total + _currentIndex) - i;
-                                } else if ( _currentIndex >= total - loopCount && i < _currentIndex - loopCount ) {
-                                    past = false;
-                                    offset = (total - _currentIndex) + i;
-                                }
-                            }
-
-                            newClass += (past ?
-                                classes.itemPast + ' ' + classes.itemPast + '-' + offset :
-                                classes.itemFuture + ' ' + classes.itemFuture + '-' + offset
-                            );
-
-                            zIndex = total - offset;
-                        }
-
-                        item
-                            .css('z-index', zIndex * 2)
-                            .attr('class', function(i, c) {
-                                return c && c.replace(classRemover, '').replace(whiteSpaceRemover, ' ') + newClass;
-                            });
-                    });
-
                     if ( !_containerWidth || _itemOffsets[_currentIndex] === undefined ) { resize(true); }
 
                     if ( transformSupport ) {
@@ -454,10 +451,15 @@
                 return self;
             }
 
-            function pause() {
+            function stop(){
                 clearInterval(_playing);
-                if ( settings.autoplay ) { _playing = -1; }
+                _playing = 0;
+                return self;
+            }
 
+            function pause(forced) {
+                stop();
+                if ( settings.autoplay && forced ) { _playing = -1; }
                 return self;
             }
 
@@ -474,8 +476,6 @@
                 _container = self.find(settings.itemContainer).addClass(classes.container);
 
                 _items = _container.find(settings.itemSelector);
-
-                if ( _items.length <= 1 ) { return; }
 
                 _items
                     .addClass(classes.item)
@@ -616,11 +616,6 @@
 
                 index();
 
-                if ( _items.length <= 1 ) {
-                    self.css('visibility', '');
-                    return;
-                }
-
                 style = (settings.style ? 'flipster--' + settings.style.split(' ').join(' flipster--') : false);
 
                 self.addClass([
@@ -662,7 +657,10 @@
 
                 if ( settings.pauseOnHover ) {
                     _container
-                        .on('mouseenter.flipster', pause)
+                        .on('mouseenter.flipster', function(){
+                            if (_playing) { pause(true); }
+                            else { stop() }
+                        })
                         .on('mouseleave.flipster', function() {
                             if ( _playing === -1 ) { play(); }
                         });
@@ -679,6 +677,7 @@
                 next: function() { return jump('next'); },
                 prev: function() { return jump('prev'); },
                 play: play,
+                stop: stop,
                 pause: pause,
                 index: index
             };
