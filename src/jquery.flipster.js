@@ -378,18 +378,30 @@
 
                     if ( i === _currentIndex ) {
                         newClass += classes.itemCurrent;
-                        zIndex = (total + 1);
-                    } else if ( i < _currentIndex ) {
-                        newClass += classes.itemPast + ' ' +
-                            classes.itemPast + '-' + (_currentIndex - i);
-                        zIndex = i;
+                        zIndex = (total + 2);
                     } else {
-                        newClass += classes.itemFuture + ' ' +
-                            classes.itemFuture + '-' + ( i - _currentIndex );
-                        zIndex = (total - i);
+                    	past = ( i < _currentIndex ? true : false );
+                        offset = ( past ? _currentIndex - i : i - _currentIndex );
+
+                        if ( loopCount ) {
+                            if ( _currentIndex <= loopCount && i > _currentIndex + loopCount ) {
+                                past = true;
+                                offset = (total + _currentIndex) - i;
+                            } else if ( _currentIndex >= total - loopCount && i < _currentIndex - loopCount ) {
+                                past = false;
+                                offset = (total - _currentIndex) + i;
+                            }
+                        }
+
+                        newClass += (past ?
+                            classes.itemPast + ' ' + classes.itemPast + '-' + offset :
+                            classes.itemFuture + ' ' + classes.itemFuture + '-' + offset
+                        );
+
+                        zIndex = total - offset;
                     }
 
-                    item.css('z-index', zIndex )
+                    item.css('z-index', zIndex * 2)
                         .attr('class',function(i, c){
                             return c && c.replace(classRemover, '').replace(whiteSpaceRemover,' ') + newClass;
                         });
